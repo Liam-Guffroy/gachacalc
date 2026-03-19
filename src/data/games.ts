@@ -28,8 +28,8 @@ export const GAMES: GameData[] = [
     shortName: 'HSR',
     accentColor: '#a78bfa',
     glowColor: 'rgba(167,139,250,0.4)',
-    character: { label: 'Character', hardPity: 90, avgPity: 80, featured: 0.58, guaranteedAt: 180 },
-    lc: { label: 'Light Cone', hardPity: 80, avgPity: 68, featured: 0.75, guaranteedAt: 160 },
+    character: { label: 'Character', hardPity: 90, avgPity: 62, featured: 0.58, guaranteedAt: 180 },
+    lc: { label: 'Light Cone', hardPity: 80, avgPity: 55, featured: 0.75, guaranteedAt: 160 },
     currency: 'Pulls',
   },
   {
@@ -38,8 +38,8 @@ export const GAMES: GameData[] = [
     shortName: 'WuWa',
     accentColor: '#34d399',
     glowColor: 'rgba(52,211,153,0.4)',
-    character: { label: 'Character', hardPity: 80, avgPity: 70, featured: 0.5, guaranteedAt: 160 },
-    lc: { label: 'Weapon', hardPity: 80, avgPity: 65, featured: 1.0, guaranteedAt: 80 },
+    character: { label: 'Character', hardPity: 80, avgPity: 55, featured: 0.5, guaranteedAt: 160 },
+    lc: { label: 'Weapon', hardPity: 80, avgPity: 55, featured: 1.0, guaranteedAt: 80 },
     currency: 'Convenes',
   },
   {
@@ -48,8 +48,8 @@ export const GAMES: GameData[] = [
     shortName: 'ZZZ',
     accentColor: '#fb923c',
     glowColor: 'rgba(251,146,60,0.4)',
-    character: { label: 'Agent', hardPity: 90, avgPity: 80, featured: 0.5, guaranteedAt: 180 },
-    lc: { label: 'W-Engine', hardPity: 80, avgPity: 67, featured: 0.75, guaranteedAt: 160 },
+    character: { label: 'Agent', hardPity: 90, avgPity: 62, featured: 0.5, guaranteedAt: 180 },
+    lc: { label: 'W-Engine', hardPity: 80, avgPity: 55, featured: 0.75, guaranteedAt: 160 },
     currency: 'Signals',
   },
 ];
