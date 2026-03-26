@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { GAMES } from '../data/games'
 import CounterInput from '../components/CounterInput'
+import PityInput from '../components/PityInput'
 
 export default function Calculator() {
     const { gameId } = useParams<{ gameId: string }>()
@@ -11,11 +12,12 @@ export default function Calculator() {
 
     const [chars, setChars] = useState(1)
     const [lcs, setLcs] = useState(0)
+    const [charPity, setCharPity] = useState(0)
+    const [charGuaranteed, setCharGuaranteed] = useState(false)
+    const [lcPity, setLcPity] = useState(0)
+    const [lcGuaranteed, setLcGuaranteed] = useState(false)
 
-    if (!game) {
-        navigate('/')
-        return null
-    }
+    if (!game) { navigate('/'); return null }
 
     const canSubmit = chars > 0 || lcs > 0
 
@@ -24,7 +26,15 @@ export default function Calculator() {
 
     const handleSubmit = () => {
         if (!canSubmit) return
-        navigate(`/results/${game.id}?chars=${chars}&lcs=${lcs}`)
+        const p = new URLSearchParams({
+            chars: chars.toString(),
+            lcs: lcs.toString(),
+            charPity: charPity.toString(),
+            charG: charGuaranteed ? '1' : '0',
+            lcPity: lcPity.toString(),
+            lcG: lcGuaranteed ? '1' : '0',
+        })
+        navigate(`/results/${game.id}?${p.toString()}`)
     }
 
     return (
@@ -35,13 +45,11 @@ export default function Calculator() {
             transition={{ duration: 0.4, ease: 'easeOut' }}
             className="flex-1 flex flex-col items-center justify-center min-h-screen px-6 py-24"
         >
-            {/* BG */}
             <div className="fixed inset-0 pointer-events-none" style={{
                 background: `radial-gradient(ellipse 60% 50% at 50% 50%, ${game.glowColor.replace('0.4', '0.06')} 0%, transparent 70%)`,
             }} />
 
             <div className="w-full max-w-md relative z-10">
-                {/* Header */}
                 <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="mb-10">
                     <div className="font-mono text-xs tracking-[0.4em] uppercase mb-2" style={{ color: game.accentColor, opacity: 0.7 }}>
                         {game.shortName} · PITY CALCULATOR
@@ -51,38 +59,80 @@ export default function Calculator() {
                     </h2>
                 </motion.div>
 
-                {/* Card */}
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="rounded-sm p-8 flex flex-col gap-8"
-                    style={{
-                        background: 'var(--bg-card)',
-                        border: `1px solid ${game.accentColor}25`,
-                        boxShadow: `0 0 40px ${game.glowColor.replace('0.4', '0.08')}`,
-                    }}
-                >
-                    <CounterInput
-                        label={game.character.label}
-                        sublabel={`Hard pity ${game.character.hardPity} · ${featuredLabel(game.character.featured)}`}
-                        value={chars}
-                        onChange={setChars}
-                        accentColor={game.accentColor}
-                    />
+                <div className="flex flex-col gap-4">
+                    {/* Character card */}
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="rounded-sm p-6 flex flex-col gap-5"
+                        style={{
+                            background: 'var(--bg-card)',
+                            border: `1px solid ${game.accentColor}25`,
+                            boxShadow: `0 0 40px ${game.glowColor.replace('0.4', '0.06')}`,
+                        }}
+                    >
+                        <CounterInput
+                            label={game.character.label}
+                            sublabel={`Hard pity ${game.character.hardPity} · ${featuredLabel(game.character.featured)}`}
+                            value={chars}
+                            onChange={setChars}
+                            accentColor={game.accentColor}
+                        />
+                        {chars > 0 && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: 0.2 }}>
+                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.25rem' }}>
+                                    <PityInput
+                                        pity={charPity}
+                                        guaranteed={charGuaranteed}
+                                        onPityChange={setCharPity}
+                                        onGuaranteedChange={setCharGuaranteed}
+                                        accentColor={game.accentColor}
+                                        hardPity={game.character.hardPity}
+                                        featuredLabel={featuredLabel(game.character.featured)}
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </motion.div>
 
-                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }} />
+                    {/* LC card */}
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.25 }}
+                        className="rounded-sm p-6 flex flex-col gap-5"
+                        style={{
+                            background: 'var(--bg-card)',
+                            border: `1px solid ${game.accentColor}25`,
+                            boxShadow: `0 0 40px ${game.glowColor.replace('0.4', '0.06')}`,
+                        }}
+                    >
+                        <CounterInput
+                            label={game.lc.label}
+                            sublabel={`Hard pity ${game.lc.hardPity} · ${featuredLabel(game.lc.featured)}`}
+                            value={lcs}
+                            onChange={setLcs}
+                            accentColor={game.accentColor}
+                        />
+                        {lcs > 0 && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} transition={{ duration: 0.2 }}>
+                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.25rem' }}>
+                                    <PityInput
+                                        pity={lcPity}
+                                        guaranteed={lcGuaranteed}
+                                        onPityChange={setLcPity}
+                                        onGuaranteedChange={setLcGuaranteed}
+                                        accentColor={game.accentColor}
+                                        hardPity={game.lc.hardPity}
+                                        featuredLabel={featuredLabel(game.lc.featured)}
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </motion.div>
+                </div>
 
-                    <CounterInput
-                        label={game.lc.label}
-                        sublabel={`Hard pity ${game.lc.hardPity} · ${featuredLabel(game.lc.featured)}`}
-                        value={lcs}
-                        onChange={setLcs}
-                        accentColor={game.accentColor}
-                    />
-                </motion.div>
-
-                {/* CTA */}
                 <motion.button
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}

@@ -1,6 +1,6 @@
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { GAMES, calcAverage, calcWorstCase } from '../data/games'
+import { GAMES, calcExpected, calcWorstCase, calcLucky, BannerState } from '../data/games'
 
 interface StatCardProps {
   title: string
@@ -40,26 +40,35 @@ export default function Results() {
   const navigate = useNavigate()
 
   const game = GAMES.find(g => g.id === gameId)
-  const chars = parseInt(params.get('chars') || '0')
-  const lcs = parseInt(params.get('lcs') || '0')
-
   if (!game) { navigate('/'); return null }
 
-  const charAvg = calcAverage(chars, game.character.avgPity, game.character.featured)
-  const charWorst = calcWorstCase(chars, game.character.guaranteedAt)
-  const lcAvg = calcAverage(lcs, game.lc.avgPity, game.lc.featured)
-  const lcWorst = calcWorstCase(lcs, game.lc.guaranteedAt)
+  const chars = parseInt(params.get('chars') || '0')
+  const lcs = parseInt(params.get('lcs') || '0')
+  const charPity = parseInt(params.get('charPity') || '0')
+  const charGuaranteed = params.get('charG') === '1'
+  const lcPity = parseInt(params.get('lcPity') || '0')
+  const lcGuaranteed = params.get('lcG') === '1'
+
+  const charState: BannerState = { count: chars, pity: charPity, guaranteed: charGuaranteed }
+  const lcState: BannerState = { count: lcs, pity: lcPity, guaranteed: lcGuaranteed }
+
+  const charAvg = calcExpected(charState, game.character.avgPity, game.character.featured)
+  const charWorst = calcWorstCase(charState, game.character.hardPity, game.character.featured, game.character.guaranteedAt)
+  const charLucky = calcLucky(charState, game.character.avgPity)
+
+  const lcAvg = calcExpected(lcState, game.lc.avgPity, game.lc.featured)
+  const lcWorst = calcWorstCase(lcState, game.lc.hardPity, game.lc.featured, game.lc.guaranteedAt)
+  const lcLucky = calcLucky(lcState, game.lc.avgPity)
 
   const totalAvg = charAvg + lcAvg
   const totalWorst = charWorst + lcWorst
-
-  // Lucky case: win all 50/50s — just avgPity * count, no division by featured rate
-  const charLucky = chars > 0 ? Math.round(game.character.avgPity * chars) : 0
-  const lcLucky = lcs > 0 ? Math.round(game.lc.avgPity * lcs) : 0
   const totalLucky = charLucky + lcLucky
 
-  const charFeaturedLabel = game.character.featured === 1 ? 'Guaranteed' : `${Math.round(game.character.featured * 100)}/${Math.round((1 - game.character.featured) * 100)}`
-  const lcFeaturedLabel = game.lc.featured === 1 ? 'Guaranteed' : `${Math.round(game.lc.featured * 100)}/${Math.round((1 - game.lc.featured) * 100)}`
+  const featuredLabel = (rate: number) =>
+      rate === 1 ? 'Guaranteed' : `${Math.round(rate * 100)}/${Math.round((1 - rate) * 100)}`
+
+  const charFeaturedLabel = featuredLabel(game.character.featured)
+  const lcFeaturedLabel = featuredLabel(game.lc.featured)
 
   return (
       <motion.main
@@ -69,13 +78,11 @@ export default function Results() {
           transition={{ duration: 0.4, ease: 'easeOut' }}
           className="flex-1 flex flex-col items-center justify-center min-h-screen px-6 py-24"
       >
-        {/* BG glow */}
         <div className="fixed inset-0 pointer-events-none" style={{
           background: `radial-gradient(ellipse 70% 50% at 50% 50%, ${game.glowColor.replace('0.4', '0.07')} 0%, transparent 70%)`,
         }} />
 
         <div className="w-full max-w-lg relative z-10">
-          {/* Header */}
           <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="mb-8">
             <div className="font-mono text-xs tracking-[0.4em] uppercase mb-2" style={{ color: game.accentColor, opacity: 0.7 }}>
               {game.shortName} · RESULTS
@@ -84,9 +91,9 @@ export default function Results() {
               You'll need this<br />many {game.currency.toLowerCase()}
             </h2>
             <div className="mt-3 font-body text-sm" style={{ color: '#475569' }}>
-              {chars > 0 && `${chars} ${game.character.label}${chars > 1 ? 's' : ''}`}
+              {chars > 0 && `${chars} ${game.character.label}${chars > 1 ? 's' : ''}${charGuaranteed ? ' (guaranteed)' : ''} @ pity ${charPity}`}
               {chars > 0 && lcs > 0 && ' + '}
-              {lcs > 0 && `${lcs} ${game.lc.label}${lcs > 1 ? 's' : ''}`}
+              {lcs > 0 && `${lcs} ${game.lc.label}${lcs > 1 ? 's' : ''}${lcGuaranteed ? ' (guaranteed)' : ''} @ pity ${lcPity}`}
             </div>
           </motion.div>
 
@@ -112,27 +119,22 @@ export default function Results() {
               {game.currency.toUpperCase()} · EXPECTED CASE
             </div>
 
-            {/* Lucky & Worst row */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '1.25rem', paddingTop: '1.25rem' }}
                  className="grid grid-cols-2 gap-4">
               <div>
                 <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: '#22c55e' }}>
-                  🍀 IF YOU WIN ALL
+                  🍀 WIN ALL
                 </div>
                 <div className="font-display font-bold text-2xl" style={{ color: '#22c55e' }}>
                   {totalLucky.toLocaleString()}
                 </div>
                 <div className="font-mono text-xs mt-0.5" style={{ color: '#374151' }}>
-                  {chars > 0 && lcs > 0
-                      ? `${charFeaturedLabel} + ${lcFeaturedLabel}`
-                      : chars > 0
-                          ? charFeaturedLabel
-                          : lcFeaturedLabel}
+                  {chars > 0 && lcs > 0 ? `${charFeaturedLabel} + ${lcFeaturedLabel}` : chars > 0 ? charFeaturedLabel : lcFeaturedLabel}
                 </div>
               </div>
               <div>
                 <div className="font-mono text-xs tracking-widest uppercase mb-1" style={{ color: '#ef4444' }}>
-                  💀 IF YOU LOSE ALL
+                  💀 LOSE ALL
                 </div>
                 <div className="font-display font-bold text-2xl" style={{ color: '#374151' }}>
                   {totalWorst.toLocaleString()}
@@ -147,74 +149,43 @@ export default function Results() {
           {/* Breakdown grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {chars > 0 && (
-                <StatCard
-                    title={`${game.character.label} avg`}
-                    value={charAvg}
-                    subtitle={`${chars} unit${chars > 1 ? 's' : ''} · ${charFeaturedLabel}`}
-                    accentColor={game.accentColor}
-                    delay={0.25}
-                />
+                <StatCard title={`${game.character.label} avg`} value={charAvg}
+                          subtitle={`${chars} unit${chars > 1 ? 's' : ''} · pity ${charPity}${charGuaranteed ? ' · guaranteed' : ''}`}
+                          accentColor={game.accentColor} delay={0.25} />
             )}
             {lcs > 0 && (
-                <StatCard
-                    title={`${game.lc.label} avg`}
-                    value={lcAvg}
-                    subtitle={`${lcs} unit${lcs > 1 ? 's' : ''} · ${lcFeaturedLabel}`}
-                    accentColor={game.accentColor}
-                    delay={0.3}
-                />
+                <StatCard title={`${game.lc.label} avg`} value={lcAvg}
+                          subtitle={`${lcs} unit${lcs > 1 ? 's' : ''} · pity ${lcPity}${lcGuaranteed ? ' · guaranteed' : ''}`}
+                          accentColor={game.accentColor} delay={0.3} />
             )}
             {chars > 0 && (
-                <StatCard
-                    title={`${game.character.label} lucky`}
-                    value={charLucky}
-                    subtitle={`Win all ${charFeaturedLabel}`}
-                    accentColor={'#22c55e'}
-                    delay={0.35}
-                />
+                <StatCard title={`${game.character.label} lucky`} value={charLucky}
+                          subtitle={`Win all · pity ${charPity}`}
+                          accentColor={'#22c55e'} delay={0.35} />
             )}
             {lcs > 0 && (
-                <StatCard
-                    title={`${game.lc.label} lucky`}
-                    value={lcLucky}
-                    subtitle={`Win all ${lcFeaturedLabel}`}
-                    accentColor={'#22c55e'}
-                    delay={0.4}
-                />
+                <StatCard title={`${game.lc.label} lucky`} value={lcLucky}
+                          subtitle={`Win all · pity ${lcPity}`}
+                          accentColor={'#22c55e'} delay={0.4} />
             )}
           </div>
 
           {/* Actions */}
-          <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex gap-3"
-          >
-            <button
-                onClick={() => navigate(`/calc/${game.id}`)}
-                className="flex-1 py-3 font-display font-semibold text-sm uppercase tracking-widest rounded-sm transition-all hover:opacity-80"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}
-            >
+          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="flex gap-3">
+            <button onClick={() => navigate(`/calc/${game.id}`)}
+                    className="flex-1 py-3 font-display font-semibold text-sm uppercase tracking-widest rounded-sm transition-all hover:opacity-80"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}>
               ← Adjust
             </button>
-            <button
-                onClick={() => navigate('/')}
-                className="flex-1 py-3 font-display font-semibold text-sm uppercase tracking-widest rounded-sm transition-all hover:opacity-80"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}
-            >
+            <button onClick={() => navigate('/')}
+                    className="flex-1 py-3 font-display font-semibold text-sm uppercase tracking-widest rounded-sm transition-all hover:opacity-80"
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}>
               Other Game
             </button>
           </motion.div>
 
-          {/* Footnote */}
-          <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-center font-mono text-xs mt-5"
-              style={{ color: '#1f2937' }}
-          >
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
+                    className="text-center font-mono text-xs mt-5" style={{ color: '#1f2937' }}>
             Averages are statistical estimates. Actual results may vary.
           </motion.p>
         </div>
