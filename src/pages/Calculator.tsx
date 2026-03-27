@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import {useEffect, useState} from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { GAMES } from '../data/games'
@@ -10,13 +10,19 @@ export default function Calculator() {
     const navigate = useNavigate()
     const game = GAMES.find(g => g.id === gameId)
 
-    const [chars, setChars] = useState(1)
-    const [lcs, setLcs] = useState(0)
-    const [charPity, setCharPity] = useState(0)
-    const [charGuaranteed, setCharGuaranteed] = useState(false)
-    const [lcPity, setLcPity] = useState(0)
-    const [lcGuaranteed, setLcGuaranteed] = useState(false)
+    const [chars, setChars] = useState(() => parseInt(localStorage.getItem(`${gameId}-chars`) || '1'))
+    const [lcs, setLcs] = useState(() => parseInt(localStorage.getItem(`${gameId}-lcs`) || '0'))
+    const [charPity, setCharPity] = useState(() => parseInt(localStorage.getItem(`${gameId}-charPity`) || '0'))
+    const [charGuaranteed, setCharGuaranteed] = useState(() => localStorage.getItem(`${gameId}-charG`) === '1')
+    const [lcPity, setLcPity] = useState(() => parseInt(localStorage.getItem(`${gameId}-lcPity`) || '0'))
+    const [lcGuaranteed, setLcGuaranteed] = useState(() => localStorage.getItem(`${gameId}-lcG`) === '1')
 
+    useEffect(() => { localStorage.setItem(`${gameId}-chars`, chars.toString()) }, [chars, gameId])
+    useEffect(() => { localStorage.setItem(`${gameId}-lcs`, lcs.toString()) }, [lcs, gameId])
+    useEffect(() => { localStorage.setItem(`${gameId}-charPity`, charPity.toString()) }, [charPity, gameId])
+    useEffect(() => { localStorage.setItem(`${gameId}-charG`, charGuaranteed ? '1' : '0') }, [charGuaranteed, gameId])
+    useEffect(() => { localStorage.setItem(`${gameId}-lcPity`, lcPity.toString()) }, [lcPity, gameId])
+    useEffect(() => { localStorage.setItem(`${gameId}-lcG`, lcGuaranteed ? '1' : '0') }, [lcGuaranteed, gameId])
     if (!game) { navigate('/'); return null }
 
     const canSubmit = chars > 0 || lcs > 0
