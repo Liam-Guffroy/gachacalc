@@ -38,8 +38,8 @@ export const GAMES: GameData[] = [
     shortName: 'WuWa',
     accentColor: '#34d399',
     glowColor: 'rgba(52,211,153,0.4)',
-    character: { label: 'Character', hardPity: 80, avgPity: 55, featured: 0.5, guaranteedAt: 160 },
-    lc: { label: 'Weapon', hardPity: 80, avgPity: 55, featured: 1.0, guaranteedAt: 80 },
+    character: { label: 'Character', hardPity: 80, avgPity: 54, featured: 0.5, guaranteedAt: 160 },
+    lc: { label: 'Weapon', hardPity: 80, avgPity: 54, featured: 1.0, guaranteedAt: 80 },
     currency: 'Convenes',
   },
   {
